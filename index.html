@@ -248,7 +248,7 @@ function sessionHTML(s){
 function renderClients(){
  $('view').innerHTML=`
  <div style="display:flex;justify-content:space-between;align-items:end;gap:12px"><div><div class="eyebrow">ROSTER</div><h2>CLIENTS</h2></div><button class="btn" id="clearAllBtn">CLEAR ALL</button></div>
- <input class="search" id="search" placeholder="Search client...">
+ <input class="search" id="search" placeholder="Search client..."><div class="meta" style="margin:-3px 0 10px">DOWNLOAD AGREEMENT genera el documento listo para imprimir o guardar como PDF.</div>
  <div class="card"><div id="clientList"></div></div>`;
  $('search').addEventListener('input',drawClients);
  drawClients();$('clearAllBtn').onclick=clearAllClients;
@@ -261,7 +261,7 @@ function drawClients(){
   <div><div class="name">${esc(c.name)}</div>
   <div class="meta">${c.classes} PACK · ${c.days.map(d=>dayNames[d]).join(' / ')||'NO DAYS'} · ${c.time||'NO TIME'} · ${fmt(c.start)} → ${fmt(c.expiry)}</div>
   <div class="progress"><i style="width:${Math.min(100,used(c)/c.classes*100)}%"></i></div></div>
-  <b>${left(c)}</b><div style="display:flex;gap:5px;flex-wrap:wrap"><button class="btn" onclick="editClient('${c.id}')">EDIT</button><button class="btn" onclick="deleteClient('${c.id}')">DELETE</button><button class="btn" onclick="exportAgreement('${c.id}')">AGREEMENT</button></div>
+  <b>${left(c)}</b><div style="display:flex;gap:5px;flex-wrap:wrap"><button class="btn" onclick="editClient('${c.id}')">EDIT</button><button class="btn" onclick="deleteClient('${c.id}')">DELETE</button><button class="btn" onclick="exportAgreement('${c.id}')">DOWNLOAD AGREEMENT</button></div>
  </div>`).join(''):'<div class="empty">NO CLIENTS YET.</div>';
 }
 
@@ -410,12 +410,16 @@ function agreementHTML(c){
  '<div class="sign"><div class="line">PTRAINING PERÚ</div><div class="line">'+esc(c.name)+'</div></div></div><script>window.onload=function(){setTimeout(function(){window.print()},350)}<\/script></body></html>';
 }
 function exportAgreement(id){
- const c=db.clients.find(x=>x.id===id);
- if(!c)return;
- const w=window.open('','_blank');
- if(!w){toast('PERMITE VENTANAS EMERGENTES PARA EXPORTAR');return}
- w.document.write(agreementHTML(c));
- w.document.close();
+ const c=db.clients.find(x=>x.id===id); if(!c)return;
+ const html=agreementHTML(c);
+ const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ a.href=url;
+ a.download='PTRAINING_PERU_Acuerdo_'+(c.name||'Cliente').replace(/[^a-z0-9áéíóúñü -]/gi,'').replace(/\s+/g,'_')+'.html';
+ document.body.appendChild(a); a.click(); a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ toast('AGREEMENT DOWNLOADED');
 }
 function exportCSV(){
  const rows=[['Client','Date','Time','Status','Classes left','Plan','Paid','Pending']];
